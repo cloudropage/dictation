@@ -3,19 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>自主溫習默書程式Ver.1</title>
+  <title>自主溫習默書程式</title>
   <style>
     body { font-family: system-ui, -apple-system, sans-serif; background: #f4f6f9; margin: 0; padding: 20px; color: #333; }
     .card { background: #fff; max-width: 900px; margin: 0 auto; padding: 24px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
     h1, h2 { text-align: center; color: #2c3e50; margin-top: 0; }
     .hidden { display: none !important; }
 
-    /* 佈局：左右分欄（設定與存檔清單） */
     .setup-layout { display: flex; gap: 20px; flex-wrap: wrap; }
     .main-setup { flex: 2; min-width: 300px; }
     .sidebar-saved { flex: 1; min-width: 250px; background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; }
 
-    /* 輸入區塊 */
     .batch-box { width: 100%; height: 120px; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; resize: vertical; margin-bottom: 10px; }
     table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
     th, td { border: 1px solid #e2e8f0; padding: 6px; text-align: center; }
@@ -34,20 +32,22 @@
     .controls { display: flex; gap: 15px; justify-content: center; align-items: center; margin-top: 15px; flex-wrap: wrap; }
     .radio-group { display: flex; gap: 10px; align-items: center; }
 
-    /* 存檔列表樣式 */
     .saved-item { background: #fff; padding: 10px; border-radius: 6px; margin-bottom: 8px; border: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; }
     .saved-info { cursor: pointer; font-size: 14px; font-weight: 500; color: #2c3e50; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 130px; }
     .saved-info:hover { color: #4a90e2; text-decoration: underline; }
 
-    /* 默書進行頁面 */
     .test-area { text-align: center; }
     .img-preview { max-width: 250px; max-height: 200px; margin: 15px auto; border-radius: 8px; display: block; object-fit: contain; }
-    .audio-btn { background: #e67e22; margin: 15px 0; }
+    .audio-btn { background: #e67e22; margin: 10px 0; font-size: 16px; padding: 10px 20px; }
     .audio-btn:hover { background: #d35400; }
+    
+    .speed-control { background: #fff8f0; padding: 8px 15px; border-radius: 8px; margin: 10px auto; display: inline-block; border: 1px solid #f3d5b5; }
+
     .answer-input { font-size: 20px; padding: 10px; width: 80%; max-width: 300px; text-align: center; border: 2px solid #4a90e2; border-radius: 6px; }
     .progress { color: #7f8c8d; font-weight: bold; margin-bottom: 10px; }
+    
+    .nav-buttons { display: flex; justify-content: center; gap: 15px; margin-top: 15px; }
 
-    /* 結算頁面 */
     .score-board { text-align: center; font-size: 28px; color: #27ae60; font-weight: bold; margin: 20px 0; }
     .result-item { display: flex; justify-content: space-between; padding: 8px 15px; border-bottom: 1px solid #eee; }
     .correct { color: #2ecc71; font-weight: bold; }
@@ -59,24 +59,21 @@
 <div class="card">
   <!-- 頁面 1: 設定與輸入字詞 -->
   <div id="setup-page">
-    <h1>📝 自主溫習默書程式Ver.1</h1>
+    <h1>📝 自主溫習默書程式</h1>
     
     <div class="setup-layout">
-      <!-- 左側：輸入與表格 -->
       <div class="main-setup">
         <h3>1. 輸入生字內容</h3>
         <p style="font-size:13px; color:#666; margin-top:0;">
-          💡 <strong>快捷方法：</strong>可在下方大格貼上多行文字（或匯入 TXT），每行一題，自動填入表格；也可直接在表格逐格輸入並加上圖片網址。
+          💡 每行貼上一題（支援中/英文）。
         </p>
         
-        <!-- 大輸入格與 TXT 匯入 -->
         <textarea id="batch-input" class="batch-box" placeholder="在此貼上多行生字（每行一題）..."></textarea>
         <div style="margin-bottom: 15px; display: flex; gap: 10px; align-items: center;">
           <button class="btn" style="font-size:13px; padding:6px 12px;" onclick="importFromBatch()">⬇️ 帶入表格</button>
           <input type="file" id="txt-file-input" accept=".txt" style="font-size:13px;" onchange="importTxtFile(event)">
         </div>
 
-        <!-- 30格詳細表格 -->
         <table>
           <thead>
             <tr>
@@ -85,12 +82,9 @@
               <th style="width: 46%;">圖片網址 (選填)</th>
             </tr>
           </thead>
-          <tbody id="input-rows">
-            <!-- JS 動態生成 30 格 -->
-          </tbody>
+          <tbody id="input-rows"></tbody>
         </table>
 
-        <!-- 儲存設定專區 -->
         <div style="background: #edf2f7; padding: 12px; border-radius: 8px; margin-bottom: 15px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
           <input type="text" id="save-title-input" placeholder="請輸入本組默書名稱 (預設為日期)" style="flex:1; min-width:180px;">
           <button class="btn btn-secondary" style="font-size:14px; padding:8px 12px;" onclick="saveCurrentSet()">💾 儲存這組題目</button>
@@ -105,13 +99,10 @@
         </div>
       </div>
 
-      <!-- 右側：已儲存的題目清單 -->
       <div class="sidebar-saved">
         <h3>📂 歷史存檔清單</h3>
-        <p style="font-size:12px; color:#666;">點擊名稱即可載入該組題目：</p>
-        <div id="saved-list-container">
-          <!-- JS 動態載入存檔 -->
-        </div>
+        <p style="font-size:12px; color:#666;">點擊名稱即可載入：</p>
+        <div id="saved-list-container"></div>
       </div>
     </div>
   </div>
@@ -123,14 +114,22 @@
     <img id="display-img" class="img-preview hidden" src="" alt="題目圖片">
     
     <div>
-      <button class="btn audio-btn" onclick="speakCurrentWord()">🔊 讀出發音</button>
+      <button class="btn audio-btn" onclick="speakCurrentWord()">🔊 播放發音</button>
     </div>
 
-    <div style="margin: 20px 0;">
+    <div class="speed-control">
+      <label for="speed-range" style="font-size: 13px; font-weight: bold; color: #d35400;">語速調節：<span id="speed-val">0.8</span>x</label><br>
+      <input type="range" id="speed-range" min="0.5" max="1.2" step="0.1" value="0.8" oninput="updateSpeedLabel()" style="width: 160px; margin-top: 4px;">
+    </div>
+
+    <div style="margin: 15px 0;">
       <input type="text" id="user-answer" class="answer-input" placeholder="請在此輸入答案..." autocomplete="off">
     </div>
 
-    <button class="btn" onclick="nextQuestion()">Next ➡️</button>
+    <div class="nav-buttons">
+      <button class="btn btn-secondary" id="prev-btn" onclick="prevQuestion()" style="display:none;">⬅️ Prev</button>
+      <button class="btn" onclick="nextQuestion()">Next ➡️</button>
+    </div>
   </div>
 
   <!-- 頁面 3: 成績結算 -->
@@ -148,102 +147,95 @@
 </div>
 
 <script>
-  // 生成 30 個輸入框
   const tbody = document.getElementById('input-rows');
   for (let i = 1; i <= 30; i++) {
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td>${i}</td>
-      <td><input type="text" id="word-${i}" placeholder="例: Apple"></td>
+      <td><input type="text" id="word-${i}" placeholder="例: 派遣"></td>
       <td><input type="text" id="img-${i}" placeholder="圖片網址(選填)"></td>
     `;
     tbody.appendChild(tr);
   }
 
-  // 頁面載入時自動讀取存檔清單
+  // 💡 強制預載入瀏覽器語音庫（解決 GitHub Pages 靜音問題）
+  let synthVoices = [];
+  if ('speechSynthesis' in window) {
+    function loadVoices() {
+      synthVoices = window.speechSynthesis.getVoices();
+    }
+    loadVoices();
+    if (window.speechSynthesis.onvoiceschanged !== undefined) {
+      window.speechSynthesis.onvoiceschanged = loadVoices;
+    }
+  }
+
   window.onload = function() {
     renderSavedList();
   };
 
-  // 功能 (1)：從大輸入格把多行文字帶入表格
+  function updateSpeedLabel() {
+    const val = document.getElementById('speed-range').value;
+    document.getElementById('speed-val').innerText = val;
+  }
+
   function importFromBatch() {
     const text = document.getElementById('batch-input').value;
     const lines = text.split('\n').map(l => l.trim()).filter(l => l !== '');
-    
-    // 清空現有表格
     for (let i = 1; i <= 30; i++) {
       document.getElementById(`word-${i}`).value = '';
       document.getElementById(`img-${i}`).value = '';
     }
-
-    // 填入前 30 行
     for (let i = 0; i < Math.min(lines.length, 30); i++) {
       document.getElementById(`word-${i+1}`).value = lines[i];
     }
-    alert(`成功匯入 ${Math.min(lines.length, 30)} 個項目到表格中！`);
+    alert(`成功匯入 ${Math.min(lines.length, 30)} 個項目！`);
   }
 
-  // 功能 (1)：匯入 TXT 檔案
   function importTxtFile(event) {
     const file = event.target.files[0];
     if (!file) return;
-
     const reader = new FileReader();
     reader.onload = function(e) {
-      const content = e.target.result;
-      document.getElementById('batch-input').value = content;
-      importFromBatch(); // 自動帶入表格
+      document.getElementById('batch-input').value = e.target.result;
+      importFromBatch();
     };
     reader.readAsText(file);
   }
 
-  // 功能 (2)：儲存題目到瀏覽器 LocalStorage
   function saveCurrentSet() {
     let title = document.getElementById('save-title-input').value.trim();
     if (!title) {
-      // 預設名字為當前日期時間
       const now = new Date();
       title = `默書記錄 ${now.getMonth()+1}/${now.getDate()} ${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')}`;
     }
-
-    // 收集當前表格內容
     let items = [];
     for (let i = 1; i <= 30; i++) {
       const word = document.getElementById(`word-${i}`).value.trim();
       const img = document.getElementById(`img-${i}`).value.trim();
-      if (word !== "") {
-        items.push({ word, img });
-      }
+      if (word !== "") items.push({ word, img });
     }
-
     if (items.length === 0) {
-      alert("表格內沒有任何生字，無法儲存！");
+      alert("表格內沒有生字！");
       return;
     }
-
-    // 讀取現有存檔
     let savedSets = JSON.parse(localStorage.getItem('dictation_sets') || '{}');
     savedSets[title] = items;
     localStorage.setItem('dictation_sets', JSON.stringify(savedSets));
-
     document.getElementById('save-title-input').value = '';
     renderSavedList();
     alert(`「${title}」儲存成功！`);
   }
 
-  // 渲染右側存檔清單
   function renderSavedList() {
     const container = document.getElementById('saved-list-container');
     container.innerHTML = '';
-    
-    const savedSets = JSON.parse(localStorage.getItem('dictation_sets') || '{}');
-    const keys = Object.keys(savedSets);
-
+    let savedSets = JSON.parse(localStorage.getItem('dictation_sets') || '{}');
+    let keys = Object.keys(savedSets);
     if (keys.length === 0) {
       container.innerHTML = '<span style="font-size:12px; color:#888;">尚無存檔記錄</span>';
       return;
     }
-
     keys.forEach(title => {
       const div = document.createElement('div');
       div.className = 'saved-item';
@@ -255,31 +247,25 @@
     });
   }
 
-  // 載入指定的存檔到表格
   function loadSet(title) {
-    const savedSets = JSON.parse(localStorage.getItem('dictation_sets') || '{}');
-    const items = savedSets[title];
+    let savedSets = JSON.parse(localStorage.getItem('dictation_sets') || '{}');
+    let items = savedSets[title];
     if (!items) return;
-
-    // 清空並重新填入表格
     for (let i = 1; i <= 30; i++) {
       document.getElementById(`word-${i}`).value = '';
       document.getElementById(`img-${i}`).value = '';
     }
-
     items.forEach((item, index) => {
       if (index < 30) {
         document.getElementById(`word-${index+1}`).value = item.word;
         document.getElementById(`img-${index+1}`).value = item.img || '';
       }
     });
-
-    alert(`已成功載入「${title}」！`);
+    alert(`已載入「${title}」！`);
   }
 
-  // 刪除指定的存檔
   function deleteSet(title) {
-    if (confirm(`確定要刪除存檔「${title}」嗎？`)) {
+    if (confirm(`確定刪除「${title}」？`)) {
       let savedSets = JSON.parse(localStorage.getItem('dictation_sets') || '{}');
       delete savedSets[title];
       localStorage.setItem('dictation_sets', JSON.stringify(savedSets));
@@ -287,7 +273,6 @@
     }
   }
 
-  // 默書主流程變數
   let wordList = [];
   let currentIndex = 0;
   let userAnswers = [];
@@ -297,27 +282,20 @@
     for (let i = 1; i <= 30; i++) {
       const word = document.getElementById(`word-${i}`).value.trim();
       const img = document.getElementById(`img-${i}`).value.trim();
-      if (word !== "") {
-        wordList.push({ word, img });
-      }
+      if (word !== "") wordList.push({ word, img });
     }
-
     if (wordList.length === 0) {
       alert("請至少輸入 1 個詞語！");
       return;
     }
-
-    const isRandom = document.querySelector('input[name="order"]:checked').value === 'random';
-    if (isRandom) {
+    if (document.querySelector('input[name="order"]:checked').value === 'random') {
       wordList.sort(() => Math.random() - 0.5);
     }
-
     currentIndex = 0;
-    userAnswers = [];
-
+    userAnswers = new Array(wordList.length).fill('');
+    
     document.getElementById('setup-page').classList.add('hidden');
     document.getElementById('test-page').classList.remove('hidden');
-    
     showQuestion();
   }
 
@@ -325,8 +303,15 @@
     const current = wordList[currentIndex];
     document.getElementById('progress-text').innerText = `第 ${currentIndex + 1} / ${wordList.length} 題`;
     
+    const prevBtn = document.getElementById('prev-btn');
+    if (currentIndex > 0) {
+      prevBtn.style.display = 'inline-block';
+    } else {
+      prevBtn.style.display = 'none';
+    }
+
     const inputEl = document.getElementById('user-answer');
-    inputEl.value = '';
+    inputEl.value = userAnswers[currentIndex] || '';
     inputEl.focus();
 
     const imgEl = document.getElementById('display-img');
@@ -340,23 +325,40 @@
     speakCurrentWord();
   }
 
+  // 發音機制：結合語音強制匹配與防吞字標點間隔
   function speakCurrentWord() {
     const text = wordList[currentIndex].word;
-    if (!('speechSynthesis' in window)) return;
+    if (!text) return;
 
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(text);
-    const isEnglish = /^[A-Za-z0-9\s,.?!'-]+$/.test(text);
-    utterance.lang = isEnglish ? 'en-US' : 'zh-HK';
-    utterance.rate = 0.9;
-    window.speechSynthesis.speak(utterance);
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      
+      const isEnglish = /^[A-Za-z0-9\s,.?!'-]+$/.test(text);
+      const processedText = isEnglish ? text : text.split('').join('，');
+      
+      const utterance = new SpeechSynthesisUtterance(processedText);
+      utterance.rate = parseFloat(document.getElementById('speed-range').value);
+
+      if (isEnglish) {
+        utterance.lang = 'en-US';
+      } else {
+        utterance.lang = 'zh-HK';
+        // 嘗試精準對應廣東話 Voice
+        const targetVoice = synthVoices.find(v => v.lang === 'zh-HK' || v.lang === 'yue-Hant-HK' || v.name.includes('Hong Kong'));
+        if (targetVoice) {
+          utterance.voice = targetVoice;
+        }
+      }
+
+      window.speechSynthesis.speak(utterance);
+    }
   }
 
   function nextQuestion() {
     const answer = document.getElementById('user-answer').value.trim();
-    userAnswers.push(answer);
-    currentIndex++;
+    userAnswers[currentIndex] = answer;
 
+    currentIndex++;
     if (currentIndex < wordList.length) {
       showQuestion();
     } else {
@@ -364,16 +366,23 @@
     }
   }
 
-  document.getElementById('user-answer').addEventListener('keypress', function(e) {
-    if (e.key === 'Enter') {
-      nextQuestion();
+  function prevQuestion() {
+    if (currentIndex > 0) {
+      const answer = document.getElementById('user-answer').value.trim();
+      userAnswers[currentIndex] = answer;
+
+      currentIndex--;
+      showQuestion();
     }
+  }
+
+  document.getElementById('user-answer').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') nextQuestion();
   });
 
   function showResults() {
     document.getElementById('test-page').classList.add('hidden');
     document.getElementById('result-page').classList.remove('hidden');
-
     let correctCount = 0;
     const resultListEl = document.getElementById('result-list');
     resultListEl.innerHTML = '';
@@ -382,7 +391,6 @@
       const userAns = userAnswers[index] || '';
       const isCorrect = userAns.toLowerCase() === item.word.toLowerCase();
       if (isCorrect) correctCount++;
-
       const div = document.createElement('div');
       div.className = 'result-item';
       div.innerHTML = `
@@ -403,7 +411,7 @@
 
   function restartTest() {
     currentIndex = 0;
-    userAnswers = [];
+    userAnswers = new Array(wordList.length).fill('');
     document.getElementById('result-page').classList.add('hidden');
     document.getElementById('test-page').classList.remove('hidden');
     showQuestion();
