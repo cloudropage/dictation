@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>自主溫習默書程式 (V4版)</title>
+  <title>自主溫習默書程式</title>
   <style>
     body { font-family: system-ui, -apple-system, sans-serif; background: #f4f6f9; margin: 0; padding: 20px; color: #333; }
     .card { background: #fff; max-width: 900px; margin: 0 auto; padding: 24px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
@@ -57,9 +57,8 @@
 <body>
 
 <div class="card">
-  <!-- 頁面 1: 設定與輸入字詞 -->
   <div id="setup-page">
-    <h1>📝 自主溫習默書程式V4</h1>
+    <h1>📝 自主溫習默書程式</h1>
     
     <div class="setup-layout">
       <div class="main-setup">
@@ -107,7 +106,6 @@
     </div>
   </div>
 
-  <!-- 頁面 2: 默書進行中 -->
   <div id="test-page" class="hidden test-area">
     <div class="progress" id="progress-text">第 1 / 10 題</div>
     
@@ -117,7 +115,6 @@
       <button class="btn audio-btn" onclick="speakCurrentWord()">🔊 播放發音</button>
     </div>
 
-    <!-- 語速調節滑桿 -->
     <div class="speed-control">
       <label for="speed-range" style="font-size: 13px; font-weight: bold; color: #d35400;">語速調節：<span id="speed-val">0.8</span>x</label><br>
       <input type="range" id="speed-range" min="0.5" max="1.2" step="0.1" value="0.8" oninput="updateSpeedLabel()" style="width: 160px; margin-top: 4px;">
@@ -133,7 +130,6 @@
     </div>
   </div>
 
-  <!-- 頁面 3: 成績結算 -->
   <div id="result-page" class="hidden">
     <h1>🎉 默書完成！</h1>
     <div class="score-board" id="final-score">得分: 0 / 0</div>
@@ -254,7 +250,7 @@
   }
 
   function deleteSet(title) {
-    if (confirm(`確定刪除「${title}` + '」？')) {
+    if (confirm(`確定刪除「${title}」？`)) {
       let savedSets = JSON.parse(localStorage.getItem('dictation_sets') || '{}');
       delete savedSets[title];
       localStorage.setItem('dictation_sets', JSON.stringify(savedSets));
@@ -283,124 +279,4 @@
     currentIndex = 0;
     userAnswers = new Array(wordList.length).fill('');
     
-    document.getElementById('setup-page').classList.add('hidden');
-    document.getElementById('test-page').classList.remove('hidden');
-    showQuestion();
-  }
-
-  function showQuestion() {
-    const current = wordList[currentIndex];
-    document.getElementById('progress-text').innerText = `第 ${currentIndex + 1} / ${wordList.length} 題`;
-    
-    const prevBtn = document.getElementById('prev-btn');
-    if (currentIndex > 0) {
-      prevBtn.style.display = 'inline-block';
-    } else {
-      prevBtn.style.display = 'none';
-    }
-
-    const inputEl = document.getElementById('user-answer');
-    inputEl.value = userAnswers[currentIndex] || '';
-    inputEl.focus();
-
-    const imgEl = document.getElementById('display-img');
-    if (current.img) {
-      imgEl.src = current.img;
-      imgEl.classList.remove('hidden');
-    } else {
-      imgEl.classList.add('hidden');
-    }
-
-    speakCurrentWord();
-  }
-
-  // 💡 完美的雲端語音串流播放（支援 GitHub Pages HTTPS + 絕對不吞字 + 標準廣東話）
-  function speakCurrentWord() {
-    const text = wordList[currentIndex].word;
-    if (!text) return;
-
-    const isEnglish = /^[A-Za-z0-9\s,.?!'-]+$/.test(text);
-    const lang = isEnglish ? 'en' : 'yue';
-
-    // 使用絕對安全的 Google 官方轉譯 MP3 連結
-    const audioUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=${lang}&client=tw-ob`;
-
-    const audio = new Audio(audioUrl);
-    audio.playbackRate = parseFloat(document.getElementById('speed-range').value);
-    
-    audio.play().catch(error => {
-      console.log("自動播放被瀏覽器阻擋，請手動點擊發音按鈕", error);
-    });
-  }
-
-  function nextQuestion() {
-    const answer = document.getElementById('user-answer').value.trim();
-    userAnswers[currentIndex] = answer;
-
-    currentIndex++;
-    if (currentIndex < wordList.length) {
-      showQuestion();
-    } else {
-      showResults();
-    }
-  }
-
-  function prevQuestion() {
-    if (currentIndex > 0) {
-      const answer = document.getElementById('user-answer').value.trim();
-      userAnswers[currentIndex] = answer;
-
-      currentIndex--;
-      showQuestion();
-    }
-  }
-
-  document.getElementById('user-answer').addEventListener('keypress', function(e) {
-    if (e.key === 'Enter') nextQuestion();
-  });
-
-  function showResults() {
-    document.getElementById('test-page').classList.add('hidden');
-    document.getElementById('result-page').classList.remove('hidden');
-    let correctCount = 0;
-    const resultListEl = document.getElementById('result-list');
-    resultListEl.innerHTML = '';
-
-    wordList.forEach((item, index) => {
-      const userAns = userAnswers[index] || '';
-      const isCorrect = userAns.toLowerCase() === item.word.toLowerCase();
-      if (isCorrect) correctCount++;
-      const div = document.createElement('div');
-      div.className = 'result-item';
-      div.innerHTML = `
-        <div>
-          <strong>第 ${index + 1} 題：</strong> ${item.word}
-          <br><small style="color:#666">你的答案：${userAns || '(未填寫)'}</small>
-        </div>
-        <div class="${isCorrect ? 'correct' : 'wrong'}">
-          ${isCorrect ? '✓ 正確' : '✗ 錯誤'}
-        </div>
-      `;
-      resultListEl.appendChild(div);
-    });
-
-    const scorePercent = Math.round((correctCount / wordList.length) * 100);
-    document.getElementById('final-score').innerText = `總分：${scorePercent} 分 (${correctCount} / ${wordList.length} 題正確)`;
-  }
-
-  function restartTest() {
-    currentIndex = 0;
-    userAnswers = new Array(wordList.length).fill('');
-    document.getElementById('result-page').classList.add('hidden');
-    document.getElementById('test-page').classList.remove('hidden');
-    showQuestion();
-  }
-
-  function backToSetup() {
-    document.getElementById('result-page').classList.add('hidden');
-    document.getElementById('setup-page').classList.remove('hidden');
-  }
-</script>
-
-</body>
-</html>
+    document.getElementById('setup-page').classList.
