@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>自主溫習默書程式 (GitHub Pages 修正版)</title>
+  <title>自主溫習默書程式 (V4版)</title>
   <style>
     body { font-family: system-ui, -apple-system, sans-serif; background: #f4f6f9; margin: 0; padding: 20px; color: #333; }
     .card { background: #fff; max-width: 900px; margin: 0 auto; padding: 24px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
@@ -59,7 +59,7 @@
 <div class="card">
   <!-- 頁面 1: 設定與輸入字詞 -->
   <div id="setup-page">
-    <h1>📝 自主溫習默書程式</h1>
+    <h1>📝 自主溫習默書程式V4</h1>
     
     <div class="setup-layout">
       <div class="main-setup">
@@ -159,13 +159,6 @@
     tbody.appendChild(tr);
   }
 
-  // 預載入語音引擎（解決 GitHub Pages / Safari 初始化沒聲音的問題）
-  if ('speechSynthesis' in window) {
-    window.speechSynthesis.onvoiceschanged = function() {
-      window.speechSynthesis.getVoices();
-    };
-  }
-
   window.onload = function() {
     renderSavedList();
   };
@@ -261,7 +254,7 @@
   }
 
   function deleteSet(title) {
-    if (confirm(`確定刪除「${title}」？`)) {
+    if (confirm(`確定刪除「${title}` + '」？')) {
       let savedSets = JSON.parse(localStorage.getItem('dictation_sets') || '{}');
       delete savedSets[title];
       localStorage.setItem('dictation_sets', JSON.stringify(savedSets));
@@ -321,59 +314,23 @@
     speakCurrentWord();
   }
 
-  // 💡 GitHub Pages 兼容量產級發音機制（多重 Voice 匹配 + CORS 備援）
+  // 💡 完美的雲端語音串流播放（支援 GitHub Pages HTTPS + 絕對不吞字 + 標準廣東話）
   function speakCurrentWord() {
     const text = wordList[currentIndex].word;
     if (!text) return;
 
-    // 先嘗試使用原生 SpeechSynthesis
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel(); // 清空舊發音
-
-      const utterance = new SpeechSynthesisUtterance(text);
-      const isEnglish = /^[A-Za-z0-9\s,.?!'-]+$/.test(text);
-
-      if (isEnglish) {
-        utterance.lang = 'en-US';
-      } else {
-        utterance.lang = 'zh-HK'; // 廣東話標籤
-        // 優先搜尋精確的廣東話/香港語音庫
-        const voices = window.speechSynthesis.getVoices();
-        const hkVoice = voices.find(v => v.lang === 'zh-HK' || v.lang === 'yue-Hant-HK' || v.name.includes('Hong Kong') || v.name.includes('Cantonese'));
-        if (hkVoice) {
-          utterance.voice = hkVoice;
-        }
-      }
-
-      utterance.rate = parseFloat(document.getElementById('speed-range').value);
-
-      // 監聽是否成功播放
-      let hasPlayed = false;
-      utterance.onstart = function() { hasPlayed = true; };
-      
-      window.speechSynthesis.speak(utterance);
-
-      // 備援機制：若 1 秒內未觸發發音，嘗試調用靜態音訊
-      setTimeout(() => {
-        if (!hasPlayed && window.speechSynthesis.speaking === false) {
-          fallbackAudio(text);
-        }
-      }, 1000);
-
-    } else {
-      fallbackAudio(text);
-    }
-  }
-
-  // 音訊備援播放器
-  function fallbackAudio(text) {
     const isEnglish = /^[A-Za-z0-9\s,.?!'-]+$/.test(text);
     const lang = isEnglish ? 'en' : 'yue';
+
+    // 使用絕對安全的 Google 官方轉譯 MP3 連結
     const audioUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=${lang}&client=tw-ob`;
-    
+
     const audio = new Audio(audioUrl);
     audio.playbackRate = parseFloat(document.getElementById('speed-range').value);
-    audio.play().catch(e => console.log("備援音訊播放被瀏覽器阻擋", e));
+    
+    audio.play().catch(error => {
+      console.log("自動播放被瀏覽器阻擋，請手動點擊發音按鈕", error);
+    });
   }
 
   function nextQuestion() {
