@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>自主溫習默書程式 (V4版)</title>
+  <title>自主溫習默書程式 (GitHub Pages 修正版)</title>
   <style>
     body { font-family: system-ui, -apple-system, sans-serif; background: #f4f6f9; margin: 0; padding: 20px; color: #333; }
     .card { background: #fff; max-width: 900px; margin: 0 auto; padding: 24px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
@@ -41,7 +41,6 @@
     .audio-btn { background: #e67e22; margin: 10px 0; font-size: 16px; padding: 10px 20px; }
     .audio-btn:hover { background: #d35400; }
     
-    /* 語速調節區塊 */
     .speed-control { background: #fff8f0; padding: 8px 15px; border-radius: 8px; margin: 10px auto; display: inline-block; border: 1px solid #f3d5b5; }
 
     .answer-input { font-size: 20px; padding: 10px; width: 80%; max-width: 300px; text-align: center; border: 2px solid #4a90e2; border-radius: 6px; }
@@ -60,7 +59,7 @@
 <div class="card">
   <!-- 頁面 1: 設定與輸入字詞 -->
   <div id="setup-page">
-    <h1>📝 自主溫習默書程式Ver.4</h1>
+    <h1>📝 自主溫習默書程式</h1>
     
     <div class="setup-layout">
       <div class="main-setup">
@@ -158,6 +157,13 @@
       <td><input type="text" id="img-${i}" placeholder="圖片網址(選填)"></td>
     `;
     tbody.appendChild(tr);
+  }
+
+  // 預載入語音引擎（解決 GitHub Pages / Safari 初始化沒聲音的問題）
+  if ('speechSynthesis' in window) {
+    window.speechSynthesis.onvoiceschanged = function() {
+      window.speechSynthesis.getVoices();
+    };
   }
 
   window.onload = function() {
@@ -265,7 +271,7 @@
 
   let wordList = [];
   let currentIndex = 0;
-  let userAnswers = []; // 用陣列記錄每一題的答案
+  let userAnswers = [];
 
   function startDictation() {
     wordList = [];
@@ -282,7 +288,7 @@
       wordList.sort(() => Math.random() - 0.5);
     }
     currentIndex = 0;
-    userAnswers = new Array(wordList.length).fill(''); // 初始化答案陣列
+    userAnswers = new Array(wordList.length).fill('');
     
     document.getElementById('setup-page').classList.add('hidden');
     document.getElementById('test-page').classList.remove('hidden');
@@ -293,7 +299,6 @@
     const current = wordList[currentIndex];
     document.getElementById('progress-text').innerText = `第 ${currentIndex + 1} / ${wordList.length} 題`;
     
-    // 顯示或隱藏「上一題」按鈕（第一題時隱藏）
     const prevBtn = document.getElementById('prev-btn');
     if (currentIndex > 0) {
       prevBtn.style.display = 'inline-block';
@@ -301,7 +306,6 @@
       prevBtn.style.display = 'none';
     }
 
-    // 自動填回之前輸入過的答案（方便返回修改）
     const inputEl = document.getElementById('user-answer');
     inputEl.value = userAnswers[currentIndex] || '';
     inputEl.focus();
@@ -317,26 +321,64 @@
     speakCurrentWord();
   }
 
+  // 💡 GitHub Pages 兼容量產級發音機制（多重 Voice 匹配 + CORS 備援）
   function speakCurrentWord() {
     const text = wordList[currentIndex].word;
-    const isEnglish = /^[A-Za-z0-9\s,.?!'-]+$/.test(text);
-    const lang = isEnglish ? 'en' : 'yue';
+    if (!text) return;
 
-    const audioUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=${lang}&client=tw-ob`;
+    // 先嘗試使用原生 SpeechSynthesis
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel(); // 清空舊發音
 
-    const audio = new Audio(audioUrl);
-    // 讀取畫面上滑桿設定的語速
-    audio.playbackRate = parseFloat(document.getElementById('speed-range').value);
-    
-    audio.play().catch(error => {
-      console.log("播放失敗", error);
-    });
+      const utterance = new SpeechSynthesisUtterance(text);
+      const isEnglish = /^[A-Za-z0-9\s,.?!'-]+$/.test(text);
+
+      if (isEnglish) {
+        utterance.lang = 'en-US';
+      } else {
+        utterance.lang = 'zh-HK'; // 廣東話標籤
+        // 優先搜尋精確的廣東話/香港語音庫
+        const voices = window.speechSynthesis.getVoices();
+        const hkVoice = voices.find(v => v.lang === 'zh-HK' || v.lang === 'yue-Hant-HK' || v.name.includes('Hong Kong') || v.name.includes('Cantonese'));
+        if (hkVoice) {
+          utterance.voice = hkVoice;
+        }
+      }
+
+      utterance.rate = parseFloat(document.getElementById('speed-range').value);
+
+      // 監聽是否成功播放
+      let hasPlayed = false;
+      utterance.onstart = function() { hasPlayed = true; };
+      
+      window.speechSynthesis.speak(utterance);
+
+      // 備援機制：若 1 秒內未觸發發音，嘗試調用靜態音訊
+      setTimeout(() => {
+        if (!hasPlayed && window.speechSynthesis.speaking === false) {
+          fallbackAudio(text);
+        }
+      }, 1000);
+
+    } else {
+      fallbackAudio(text);
+    }
   }
 
-  // 儲存當前答案並前往下一題
+  // 音訊備援播放器
+  function fallbackAudio(text) {
+    const isEnglish = /^[A-Za-z0-9\s,.?!'-]+$/.test(text);
+    const lang = isEnglish ? 'en' : 'yue';
+    const audioUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=${lang}&client=tw-ob`;
+    
+    const audio = new Audio(audioUrl);
+    audio.playbackRate = parseFloat(document.getElementById('speed-range').value);
+    audio.play().catch(e => console.log("備援音訊播放被瀏覽器阻擋", e));
+  }
+
   function nextQuestion() {
     const answer = document.getElementById('user-answer').value.trim();
-    userAnswers[currentIndex] = answer; // 儲存當前答案
+    userAnswers[currentIndex] = answer;
 
     currentIndex++;
     if (currentIndex < wordList.length) {
@@ -346,10 +388,8 @@
     }
   }
 
-  // 返回上一題
   function prevQuestion() {
     if (currentIndex > 0) {
-      // 先保存當前輸入的答案
       const answer = document.getElementById('user-answer').value.trim();
       userAnswers[currentIndex] = answer;
 
