@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>自主溫習默書程式V4</title>
+  <title>自主溫習默書程式</title>
   <style>
     body { font-family: system-ui, -apple-system, sans-serif; background: #f4f6f9; margin: 0; padding: 20px; color: #333; }
     .card { background: #fff; max-width: 900px; margin: 0 auto; padding: 24px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
@@ -59,9 +59,10 @@
 <div class="card">
   <!-- 頁面 1: 設定與輸入字詞 -->
   <div id="setup-page">
-    <h1>📝 自主溫習默書程式V4</h1>
+    <h1>📝 自主溫習默書程式</h1>
     
     <div class="setup-layout">
+      <!-- 左側：輸入、匯入、表格、存檔按鈕 -->
       <div class="main-setup">
         <h3>1. 輸入生字內容</h3>
         <p style="font-size:13px; color:#666; margin-top:0;">
@@ -205,4 +206,8 @@
     let title = document.getElementById('save-title-input').value.trim();
     if (!title) {
       const now = new Date();
-      title = `默書記錄 ${now.getMonth
+      title = `默書記錄 ${now.getMonth()+1}/${now.getDate()} ${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')}`;
+    }
+    let items = [];
+    for (let i = 1; i <= 30; i++) {
+      const word = document.getElementById(`word-${
