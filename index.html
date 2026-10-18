@@ -57,6 +57,7 @@
 <body>
 
 <div class="card">
+  <!-- 頁面 1: 設定與輸入字詞 -->
   <div id="setup-page">
     <h1>📝 自主溫習默書程式</h1>
     
@@ -64,9 +65,10 @@
       <div class="main-setup">
         <h3>1. 輸入生字內容</h3>
         <p style="font-size:13px; color:#666; margin-top:0;">
-          💡 每行貼上一題（支援中/英文）。
+          💡 <strong>快捷方法：</strong>可在下方大格貼上多行文字（或匯入 TXT），每行一題，點擊「帶入表格」自動填入；也可直接在下方表格逐格輸入。
         </p>
         
+        <!-- 大輸入格與 TXT 匯入 -->
         <textarea id="batch-input" class="batch-box" placeholder="在此貼上多行生字（每行一題）..."></textarea>
         <div style="margin-bottom: 15px; display: flex; gap: 10px; align-items: center;">
           <button class="btn" style="font-size:13px; padding:6px 12px;" onclick="importFromBatch()">⬇️ 帶入表格</button>
@@ -84,6 +86,7 @@
           <tbody id="input-rows"></tbody>
         </table>
 
+        <!-- 儲存專區 -->
         <div style="background: #edf2f7; padding: 12px; border-radius: 8px; margin-bottom: 15px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
           <input type="text" id="save-title-input" placeholder="請輸入本組默書名稱 (預設為日期)" style="flex:1; min-width:180px;">
           <button class="btn btn-secondary" style="font-size:14px; padding:8px 12px;" onclick="saveCurrentSet()">💾 儲存這組題目</button>
@@ -98,6 +101,7 @@
         </div>
       </div>
 
+      <!-- 右側：歷史存檔清單 -->
       <div class="sidebar-saved">
         <h3>📂 歷史存檔清單</h3>
         <p style="font-size:12px; color:#666;">點擊名稱即可載入：</p>
@@ -106,6 +110,7 @@
     </div>
   </div>
 
+  <!-- 頁面 2: 默書進行中 -->
   <div id="test-page" class="hidden test-area">
     <div class="progress" id="progress-text">第 1 / 10 題</div>
     
@@ -115,6 +120,7 @@
       <button class="btn audio-btn" onclick="speakCurrentWord()">🔊 播放發音</button>
     </div>
 
+    <!-- 語速調節滑桿 -->
     <div class="speed-control">
       <label for="speed-range" style="font-size: 13px; font-weight: bold; color: #d35400;">語速調節：<span id="speed-val">0.8</span>x</label><br>
       <input type="range" id="speed-range" min="0.5" max="1.2" step="0.1" value="0.8" oninput="updateSpeedLabel()" style="width: 160px; margin-top: 4px;">
@@ -130,6 +136,7 @@
     </div>
   </div>
 
+  <!-- 頁面 3: 成績結算 -->
   <div id="result-page" class="hidden">
     <h1>🎉 默書完成！</h1>
     <div class="score-board" id="final-score">得分: 0 / 0</div>
@@ -144,6 +151,7 @@
 </div>
 
 <script>
+  // 生成 30 個輸入格
   const tbody = document.getElementById('input-rows');
   for (let i = 1; i <= 30; i++) {
     const tr = document.createElement('tr');
@@ -164,19 +172,23 @@
     document.getElementById('speed-val').innerText = val;
   }
 
+  // 大輸入格帶入表格功能
   function importFromBatch() {
     const text = document.getElementById('batch-input').value;
     const lines = text.split('\n').map(l => l.trim()).filter(l => l !== '');
+    
     for (let i = 1; i <= 30; i++) {
       document.getElementById(`word-${i}`).value = '';
       document.getElementById(`img-${i}`).value = '';
     }
+
     for (let i = 0; i < Math.min(lines.length, 30); i++) {
       document.getElementById(`word-${i+1}`).value = lines[i];
     }
-    alert(`成功匯入 ${Math.min(lines.length, 30)} 個項目！`);
+    alert(`成功匯入 ${Math.min(lines.length, 30)} 個項目到表格中！`);
   }
 
+  // 匯入 TXT 檔案
   function importTxtFile(event) {
     const file = event.target.files[0];
     if (!file) return;
@@ -188,6 +200,7 @@
     reader.readAsText(file);
   }
 
+  // 儲存到 LocalStorage
   function saveCurrentSet() {
     let title = document.getElementById('save-title-input').value.trim();
     if (!title) {
@@ -212,6 +225,7 @@
     alert(`「${title}」儲存成功！`);
   }
 
+  // 渲染右側存檔清單
   function renderSavedList() {
     const container = document.getElementById('saved-list-container');
     container.innerHTML = '';
@@ -232,6 +246,7 @@
     });
   }
 
+  // 載入存檔
   function loadSet(title) {
     let savedSets = JSON.parse(localStorage.getItem('dictation_sets') || '{}');
     let items = savedSets[title];
@@ -249,6 +264,7 @@
     alert(`已載入「${title}」！`);
   }
 
+  // 刪除存檔
   function deleteSet(title) {
     if (confirm(`確定刪除「${title}」？`)) {
       let savedSets = JSON.parse(localStorage.getItem('dictation_sets') || '{}');
@@ -279,4 +295,123 @@
     currentIndex = 0;
     userAnswers = new Array(wordList.length).fill('');
     
-    document.getElementById('setup-page').classList.
+    document.getElementById('setup-page').classList.add('hidden');
+    document.getElementById('test-page').classList.remove('hidden');
+    showQuestion();
+  }
+
+  function showQuestion() {
+    const current = wordList[currentIndex];
+    document.getElementById('progress-text').innerText = `第 ${currentIndex + 1} / ${wordList.length} 題`;
+    
+    const prevBtn = document.getElementById('prev-btn');
+    if (currentIndex > 0) {
+      prevBtn.style.display = 'inline-block';
+    } else {
+      prevBtn.style.display = 'none';
+    }
+
+    const inputEl = document.getElementById('user-answer');
+    inputEl.value = userAnswers[currentIndex] || '';
+    inputEl.focus();
+
+    const imgEl = document.getElementById('display-img');
+    if (current.img) {
+      imgEl.src = current.img;
+      imgEl.classList.remove('hidden');
+    } else {
+      imgEl.classList.add('hidden');
+    }
+
+    speakCurrentWord();
+  }
+
+  // 語音發音機制（使用原生引擎加強防吞字，相容 GitHub HTTPS）
+  function speakCurrentWord() {
+    const text = wordList[currentIndex].word;
+    if (!text) return;
+
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      const isEnglish = /^[A-Za-z0-9\s,.?!'-]+$/.test(text);
+      const processedText = isEnglish ? text : text.split('').join(' ');
+      
+      const utterance = new SpeechSynthesisUtterance(processedText);
+      utterance.lang = isEnglish ? 'en-US' : 'zh-HK';
+      utterance.rate = parseFloat(document.getElementById('speed-range').value);
+
+      window.speechSynthesis.speak(utterance);
+    }
+  }
+
+  function nextQuestion() {
+    const answer = document.getElementById('user-answer').value.trim();
+    userAnswers[currentIndex] = answer;
+
+    currentIndex++;
+    if (currentIndex < wordList.length) {
+      showQuestion();
+    } else {
+      showResults();
+    }
+  }
+
+  function prevQuestion() {
+    if (currentIndex > 0) {
+      const answer = document.getElementById('user-answer').value.trim();
+      userAnswers[currentIndex] = answer;
+
+      currentIndex--;
+      showQuestion();
+    }
+  }
+
+  document.getElementById('user-answer').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') nextQuestion();
+  });
+
+  function showResults() {
+    document.getElementById('test-page').classList.add('hidden');
+    document.getElementById('result-page').classList.remove('hidden');
+    let correctCount = 0;
+    const resultListEl = document.getElementById('result-list');
+    resultListEl.innerHTML = '';
+
+    wordList.forEach((item, index) => {
+      const userAns = userAnswers[index] || '';
+      const isCorrect = userAns.toLowerCase() === item.word.toLowerCase();
+      if (isCorrect) correctCount++;
+      const div = document.createElement('div');
+      div.className = 'result-item';
+      div.innerHTML = `
+        <div>
+          <strong>第 ${index + 1} 題：</strong> ${item.word}
+          <br><small style="color:#666">你的答案：${userAns || '(未填寫)'}</small>
+        </div>
+        <div class="${isCorrect ? 'correct' : 'wrong'}">
+          ${isCorrect ? '✓ 正確' : '✗ 錯誤'}
+        </div>
+      `;
+      resultListEl.appendChild(div);
+    });
+
+    const scorePercent = Math.round((correctCount / wordList.length) * 100);
+    document.getElementById('final-score').innerText = `總分：${scorePercent} 分 (${correctCount} / ${wordList.length} 題正確)`;
+  }
+
+  function restartTest() {
+    currentIndex = 0;
+    userAnswers = new Array(wordList.length).fill('');
+    document.getElementById('result-page').classList.add('hidden');
+    document.getElementById('test-page').classList.remove('hidden');
+    showQuestion();
+  }
+
+  function backToSetup() {
+    document.getElementById('result-page').classList.add('hidden');
+    document.getElementById('setup-page').classList.remove('hidden');
+  }
+</script>
+
+</body>
+</html>
